@@ -1,0 +1,26 @@
+zerops:
+  - setup: kbapi
+    build:
+      base: go@1
+      buildCommands:
+        - go build -o api main.go
+      deployFiles: 
+        - api
+        - knowledge/
+    run:
+      base: go@1
+      start: ./api
+      ports:
+        - port: 8080
+          httpSupport: true
+      envVariables:
+        PORT: "8080"
+      healthCheck:
+        httpGet:
+          port: 8080
+          path: /health
+    deploy:
+      readinessCheck:
+        httpGet:
+          port: 8080
+          path: /health

@@ -1,0 +1,12 @@
+project:
+  name: zerops-kb-api
+  tags:
+    - knowledge-api
+    - mcp
+
+services:
+  - hostname: kbapi
+    type: go@1
+    enableSubdomainAccess: true
+    minContainers: 1
+    maxContainers: 3
