@@ -2,8 +2,10 @@ package main
 
 import (
 	"embed"
+	_ "embed"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/fs"
 	"log"
 	"net/http"
@@ -14,6 +16,9 @@ import (
 
 //go:embed knowledge/data
 var data embed.FS
+
+//go:embed index.html
+var indexHTML string
 
 type SearchResult struct {
 	ID          string  `json:"id"`          // Semantic ID like "service/nodejs"
@@ -100,195 +105,20 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	
-	html := `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zerops Knowledge Base API</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        .container {
-            background: white;
-            border-radius: 10px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-        h1 {
-            color: #764ba2;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 10px;
-        }
-        h2 {
-            color: #667eea;
-            margin-top: 30px;
-        }
-        .endpoint {
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 5px;
-        }
-        .method {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-weight: bold;
-            font-size: 12px;
-            margin-right: 10px;
-        }
-        .get { background: #28a745; color: white; }
-        .post { background: #007bff; color: white; }
-        code {
-            background: #f4f4f4;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-        }
-        pre {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            padding: 15px;
-            border-radius: 5px;
-            overflow-x: auto;
-        }
-        .stats {
-            display: flex;
-            gap: 20px;
-            margin: 20px 0;
-        }
-        .stat {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            flex: 1;
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 2em;
-            font-weight: bold;
-        }
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-        a {
-            color: #667eea;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .example {
-            margin: 15px 0;
-        }
-        .try-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            margin: 10px 5px;
-            transition: transform 0.2s;
-        }
-        .try-button:hover {
-            transform: translateY(-2px);
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🚀 Zerops Knowledge Base API</h1>
-        <p>Simple, semantic search API for the Zerops platform knowledge base. Fast, in-memory search with semantic IDs.</p>
-        
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-value">` + fmt.Sprintf("%d", len(knowledgeIndex)) + `</div>
-                <div class="stat-label">Knowledge Items</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">2</div>
-                <div class="stat-label">API Endpoints</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">&lt;10ms</div>
-                <div class="stat-label">Response Time</div>
-            </div>
-        </div>
-
-        <h2>📚 API Endpoints</h2>
-        
-        <div class="endpoint">
-            <span class="method post">POST</span>
-            <code>/api/v1/search</code>
-            <p>Search for knowledge using simple text queries. Supports comma or space separated terms.</p>
-            <div class="example">
-                <strong>Example Request:</strong>
-                <pre>{
-  "query": "nodejs postgresql",
-  "limit": 10
-}</pre>
-            </div>
-        </div>
-
-        <div class="endpoint">
-            <span class="method get">GET</span>
-            <code>/api/v1/knowledge/{id}</code>
-            <p>Get full knowledge content by semantic ID (e.g., <code>services/nodejs</code>, <code>recipe/laravel-jetstream</code>)</p>
-            <div class="example">
-                <strong>Example:</strong> <code>/api/v1/knowledge/recipe/laravel-jetstream</code>
-            </div>
-        </div>
-
-        <div class="endpoint">
-            <span class="method get">GET</span>
-            <code>/health</code>
-            <p>Health check endpoint for monitoring</p>
-        </div>
-
-        <h2>🎯 Try It Out</h2>
-        <p>Quick examples to get you started:</p>
-        
-        <a href="/api/v1/knowledge/services/nodejs" class="try-button">View Node.js Service</a>
-        <a href="/api/v1/knowledge/recipe/laravel-jetstream" class="try-button">View Laravel Recipe</a>
-        <a href="/api/v1/knowledge/services/postgresql" class="try-button">View PostgreSQL Service</a>
-        <a href="/health" class="try-button">Health Check</a>
-
-        <h2>💻 Example Usage</h2>
-        <pre>curl -X POST https://kbapi-167b-8080.prg1.zerops.app/api/v1/search \
-  -H "Content-Type: application/json" \
-  -d '{"query": "nodejs postgresql"}'</pre>
-
-        <h2>📖 Documentation</h2>
-        <p>For complete documentation and more examples, visit the <a href="https://github.com/krls2020/zerops-mcp-kb" target="_blank">GitHub Repository</a></p>
-        
-        <h2>🔗 Semantic ID Structure</h2>
-        <p>All knowledge items use semantic IDs in the format: <code>{type}/{name}</code></p>
-        <ul>
-            <li><code>service/</code> - Zerops services (nodejs, postgresql, mariadb, etc.)</li>
-            <li><code>recipe/</code> - Deployment recipes (laravel, django, nextjs, etc.)</li>
-            <li><code>patterns/</code> - Deployment patterns</li>
-            <li><code>runtimes/</code> - Runtime configurations</li>
-            <li><code>nginx/</code> - Nginx configurations</li>
-        </ul>
-    </div>
-</body>
-</html>`
+	// Parse and execute template
+	tmpl, err := template.New("index").Parse(indexHTML)
+	if err != nil {
+		http.Error(w, "Template error", 500)
+		return
+	}
 	
-	fmt.Fprint(w, html)
+	data := struct {
+		ItemCount int
+	}{
+		ItemCount: len(knowledgeIndex),
+	}
+	
+	tmpl.Execute(w, data)
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -410,35 +240,100 @@ func calculateScore(knowledge *Knowledge, terms []string) float64 {
 	
 	contentStr := strings.ToLower(string(knowledge.Content))
 	idLower := strings.ToLower(knowledge.ID)
-	score := 0.0
+	nameLower := strings.ToLower(knowledge.Name)
+	
+	// Track how many terms match and individual scores
+	matchedTerms := 0
+	totalScore := 0.0
+	
+	// Parse JSON to get framework and language
+	var obj map[string]interface{}
+	json.Unmarshal(knowledge.Content, &obj)
+	framework := ""
+	language := ""
+	description := ""
+	
+	if f, ok := obj["framework"].(string); ok {
+		framework = strings.ToLower(f)
+	}
+	if l, ok := obj["language"].(string); ok {
+		language = strings.ToLower(l)
+	}
+	if d, ok := obj["description"].(string); ok {
+		description = strings.ToLower(d)
+	}
 	
 	for _, term := range terms {
-		// Exact ID match
-		if strings.Contains(idLower, term) {
-			score += 2.0
+		termMatched := false
+		termScore := 0.0
+		
+		// Exact match in ID or name (highest priority)
+		if strings.Contains(idLower, term) || strings.Contains(nameLower, term) {
+			termScore += 3.0
+			termMatched = true
 		}
 		
-		// Check in content
-		count := strings.Count(contentStr, term)
-		if count > 0 {
-			score += float64(count) * 0.1
+		// Framework match (very high priority for recipes)
+		if framework != "" && strings.Contains(framework, term) {
+			termScore += 2.5
+			termMatched = true
 		}
 		
-		// Bonus for framework/language matches
-		if strings.Contains(contentStr, `"framework":"`) && strings.Contains(contentStr, term) {
-			score += 1.0
+		// Language match (high priority)
+		if language != "" && strings.Contains(language, term) {
+			termScore += 2.0
+			termMatched = true
 		}
-		if strings.Contains(contentStr, `"language":"`) && strings.Contains(contentStr, term) {
-			score += 0.8
+		
+		// Description match (medium priority)
+		if description != "" && strings.Contains(description, term) {
+			termScore += 1.5
+			termMatched = true
+		}
+		
+		// General content match (low priority)
+		if !termMatched && strings.Contains(contentStr, term) {
+			termScore += 0.5
+			termMatched = true
+		}
+		
+		if termMatched {
+			matchedTerms++
+			totalScore += termScore
 		}
 	}
 	
-	// Normalize score
-	if score > 10.0 {
-		score = 10.0
+	// Calculate final score with bonuses for matching multiple terms
+	if matchedTerms == 0 {
+		return 0
 	}
 	
-	return score / float64(len(terms))
+	// Base score from individual term scores
+	score := totalScore / float64(len(terms))
+	
+	// Bonus for matching ALL terms (completeness bonus)
+	if matchedTerms == len(terms) {
+		score *= 2.0
+	} else {
+		// Penalty for missing terms
+		score *= float64(matchedTerms) / float64(len(terms))
+	}
+	
+	// Special bonus for exact framework matches (e.g., "flask" should rank Flask recipe highest)
+	if knowledge.Type == "recipe" || knowledge.Type == "patterns" {
+		for _, term := range terms {
+			// If a term exactly matches the framework, huge bonus
+			if framework != "" && framework == term {
+				score += 5.0
+			}
+			// If the recipe name contains the term, bonus
+			if strings.Contains(nameLower, term) {
+				score += 2.0
+			}
+		}
+	}
+	
+	return score
 }
 
 func extractTags(obj map[string]interface{}, knowledgeType string) []string {
