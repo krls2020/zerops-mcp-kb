@@ -15,8 +15,6 @@ Simple two-endpoint design following MCP patterns:
 
 - **Simplicity**: Just two endpoints - search and get
 - **Semantic IDs**: Human-readable identifiers like `services/nodejs` or `recipe/flask`
-- **Fast**: In-memory index (~160 items), <10ms response
-- **Smart Scoring**: Prioritizes documents matching ALL search terms
 - **Framework-Aware**: Flask searches return Flask recipes first, not generic Python
 
 ### How It Works
