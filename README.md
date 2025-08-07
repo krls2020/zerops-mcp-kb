@@ -93,20 +93,3 @@ curl https://kbapi-167b-8080.prg1.zerops.app/api/v1/knowledge/patterns/flask
 go run main.go
 PORT=3000 go run main.go
 ```
-
-## MCP Integration
-
-Designed for MCP servers to inject contextual knowledge:
-
-```javascript
-// 1. Search for relevant knowledge
-const results = await fetch('/api/v1/search', {
-  body: JSON.stringify({query: "nodejs deployment"})
-});
-
-// 2. Get top result's full content
-const knowledge = await fetch(`/api/v1/knowledge/${results[0].id}`);
-
-// 3. Add to LLM context
-context.add(knowledge.content);
-```
